@@ -11,7 +11,7 @@ class UserAdmin(admin.ModelAdmin):
     def show_following(self, obj):
         return obj.following.count()
 
-    show_following.short_description = "Кол-во подписчиков"
+    show_following.short_description = 'Кол-во подписчиков'
 
 
 admin.site.register(User, UserAdmin)

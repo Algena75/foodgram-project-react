@@ -19,7 +19,7 @@ class RecipeAdmin(admin.ModelAdmin):
     def show_favorite(self, obj):
         return Favorite.objects.filter(recipe=obj).count()
 
-    show_favorite.short_description = "Добавлен в избранное"
+    show_favorite.short_description = 'Добавлен в избранное'
 
 
 class IngredientAdmin(admin.ModelAdmin):

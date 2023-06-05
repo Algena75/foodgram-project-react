@@ -1,11 +1,14 @@
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, IsAuthenticated
 from rest_framework.response import Response
 
+from api.filters import RecipeFilter
+from api.permissions import AuthorOrReadOnly
 from api.serializers import (IngredientSerializer, RecipeSerializer,
                              RecipeWriteSerializer, ShortRecipeSerializer,
                              TagSerializer)
@@ -29,19 +32,16 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    list_filter = ['tags', ]
-    http_method_names = ['get', 'post', 'delete', 'patch']
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
+    http_method_names = ('get', 'post', 'delete', 'patch')
+    permission_classes = (AuthorOrReadOnly,)
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
     def destroy(self, instance, *args, **kwargs):
         instance = self.get_object()
-        if instance.author != self.request.user:
-            return Response(
-                {"detail": "У вас нет прав для выполнения данного действия."},
-                status=status.HTTP_403_FORBIDDEN
-            )
         self.perform_destroy(instance)
         return Response(
             'Рецепт успешно удалён.',

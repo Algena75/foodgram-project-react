@@ -28,7 +28,7 @@ class Tag(models.Model):
     def validate_slug(self, value):
         if not re.match(r'^[-a-zA-Z0-9_]+$', value):
             raise ValidationError(
-                "Поле slug содержит запрещенные символы"
+                'Поле slug содержит запрещенные символы'
             )
         return value
 
@@ -46,6 +46,14 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return self.name[:30]
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_name_unit'
+            )
+        ]
 
 
 class Recipe(models.Model):
@@ -146,7 +154,7 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return (
-            f'{self.user} --> {self.recipe.name}'
+            f'{self.user.get_full_name()} --> {self.recipe.name}'
         )
 
 
@@ -176,5 +184,5 @@ class Favorite(models.Model):
 
     def __str__(self):
         return (
-            f'{self.user} --> {self.recipe.name}'
+            f'{self.user.get_full_name()} --> {self.recipe.name}'
         )

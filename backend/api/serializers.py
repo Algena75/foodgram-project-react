@@ -2,6 +2,7 @@ import base64
 import re
 
 from django.core.files.base import ContentFile
+from django.db import transaction
 from django.db.models import F
 from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
@@ -51,9 +52,7 @@ class UserSerializer(ValidateUserSerializer):
         )
 
     def get_is_subscribed(self, obj):
-        user = self.context['view'].request.user
-        if not user.is_authenticated or user == obj:
-            return False
+        user = self.context.get('request').user
         return Follow.objects.filter(user=user, author=obj).exists()
 
 
@@ -152,27 +151,25 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    def validate_tags(self, value):
-        if not value:
+    def validate(self, data):
+        if not data['tags']:
             raise ValidationError(
                 {'tags': 'Это поле обязательно!'}
             )
         check_list = []
-        for tag in value:
+        for tag in data['tags']:
             if tag in check_list:
                 raise ValidationError(
                     {'tags': 'Теги должны быть уникальными!'}
                 )
             check_list.append(tag)
-        return value
 
-    def validate_ingredients(self, value):
-        if not value:
+        if not data['ingredients']:
             raise ValidationError(
                 {'ingredients': 'Это поле обязательно!'}
             )
         check_list = []
-        for ingredient in value:
+        for ingredient in data['ingredients']:
             if not Ingredient.objects.filter(id=ingredient['id']).exists():
                 raise ValidationError(
                     {f'Ингредиента с id {ingredient["id"]} нет в базе!'}
@@ -187,39 +184,35 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                     'Убедитесь, что это значение больше либо равно 1.'
                 })
             check_list.append(ingredient)
-        return value
+        return data
 
-    def create(self, validated_data):
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
-        recipe.tags.set(tags)
+    @transaction.atomic
+    def create_recipe_ingredients(self, recipe, ingredients):
         for ingredient in ingredients:
             RecipeIngredient.objects.create(
                 ingredient=Ingredient.objects.get(id=ingredient['id']),
                 recipe=recipe,
                 amount=ingredient['amount']
             )
+
+    @transaction.atomic
+    def create(self, validated_data):
+        tags = validated_data.pop('tags')
+        ingredients = validated_data.pop('ingredients')
+        recipe = Recipe.objects.create(**validated_data)
+        recipe.tags.set(tags)
+        self.create_recipe_ingredients(recipe, ingredients)
         return recipe
 
+    @transaction.atomic
     def update(self, instance, validated_data):
-        if instance.author != self.context.get('request').user:
-            raise ValidationError(
-                {'message': 'Редактировать может только автор'},
-                code=status.HTTP_400_BAD_REQUEST
-            )
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('ingredients')
         instance = super().update(instance, validated_data)
         instance.tags.set(tags)
         instance.image = validated_data.get('image', instance.image)
         instance.ingredients.clear()
-        for ingredient in ingredients:
-            RecipeIngredient.objects.create(
-                ingredient=Ingredient.objects.get(id=ingredient['id']),
-                recipe=instance,
-                amount=ingredient['amount']
-            )
+        self.create_recipe_ingredients(instance, ingredients)
         instance.save()
         return instance
 
