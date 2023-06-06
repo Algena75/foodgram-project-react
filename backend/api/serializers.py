@@ -20,7 +20,34 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class ValidateUserSerializer(serializers.ModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed'
+        )
+
+    def get_is_subscribed(self, obj):
+        if self.context:
+            user = self.context.get('request').user
+            if user.is_anonymous:
+                return False
+            return Follow.objects.filter(user=user, author=obj).exists()
+        return False
+
+
+class SignupSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = User
+        fields = ('username', 'password', 'email', 'first_name', 'last_name')
 
     def validate_username(self, value):
         if value == 'me':
@@ -36,30 +63,6 @@ class ValidateUserSerializer(serializers.ModelSerializer):
                 'Имя пользователя не может быть больше 150 символов.'
             )
         return value
-
-
-class UserSerializer(ValidateUserSerializer):
-
-    class Meta:
-        model = User
-        fields = (
-            'email',
-            'pk',
-            'username',
-            'first_name',
-            'last_name',
-        )
-
-    def get_is_subscribed(self, obj):
-        user = self.context.get('request').user
-        return Follow.objects.filter(user=user, author=obj).exists()
-
-
-class SignupSerializer(ValidateUserSerializer):
-
-    class Meta:
-        model = User
-        fields = ('username', 'password', 'email', 'first_name', 'last_name')
 
 
 class TokenSerializer(serializers.Serializer):
@@ -112,7 +115,18 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        exclude = ('created',)
+        fields = (
+            'id',
+            'tags',
+            'author',
+            'ingredients',
+            'is_favorited',
+            'is_in_shopping_cart',
+            'name',
+            'image',
+            'text',
+            'cooking_time',
+        )
 
     def get_ingredients(self, obj):
         return obj.ingredients.values(
@@ -124,10 +138,14 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
         return Favorite.objects.filter(recipe=obj, user=user).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context.get('request').user
+        if user.is_anonymous:
+            return False
         return ShoppingCart.objects.filter(recipe=obj, user=user).exists()
 
 

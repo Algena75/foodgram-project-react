@@ -1,5 +1,5 @@
 from api.filters import RecipeFilter
-from api.permissions import AuthorOrReadOnly
+from api.permissions import IsAuthorOrReadOnly
 from api.serializers import (IngredientSerializer, RecipeSerializer,
                              RecipeWriteSerializer, ShortRecipeSerializer,
                              TagSerializer)
@@ -34,7 +34,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
     http_method_names = ('get', 'post', 'delete', 'patch')
-    permission_classes = (AuthorOrReadOnly,)
+    permission_classes = (IsAuthorOrReadOnly, )
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
