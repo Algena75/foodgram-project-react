@@ -15,7 +15,7 @@ services:
     env_file:
       - ./.env
   backend:
-    build: ../backend
+    image: algena75/fg_backend:latest
     restart: always
     volumes:
       - static_value:/app/static/
