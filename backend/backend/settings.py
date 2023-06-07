@@ -16,7 +16,12 @@ SECRET_KEY = 'n#x3$#-eh#y0c+#)^&qir-(*m_k)izq$v6(mndg_^y!d(8ahpl'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    '158.160.60.251',
+    'algena.ddns.net',
+]
 
 
 # Application definition
