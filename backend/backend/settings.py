@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
     '158.160.60.251',
     'algena.ddns.net',
+    'backend',
 ]
 
 
