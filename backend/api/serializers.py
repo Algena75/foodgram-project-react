@@ -191,7 +191,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                 raise ValidationError(
                     {f'Ингредиента с id {ingredient["id"]} нет в базе!'}
                 )
-            if ingredient in check_list:
+            if ingredient.get('id') in check_list:
                 raise ValidationError(
                     {'ingredients': 'Ингредиенты не должны повторяться!'}
                 )
@@ -200,7 +200,7 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
                     'amount':
                     'Убедитесь, что это значение больше либо равно 1.'
                 })
-            check_list.append(ingredient)
+            check_list.append(ingredient.get('id'))
         return data
 
     @transaction.atomic

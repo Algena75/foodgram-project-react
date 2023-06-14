@@ -18,7 +18,7 @@ http://algena.ddns.net/
 http://algena.ddns.net/api/docs/
 
 
-Администрирование (для входа использовать e-mail: admin@admin.com , password: Admin2023):
+Администрирование (для входа использовать e-mail: ******** , password: ********):
 
 
 http://algena.ddns.net/admin/
